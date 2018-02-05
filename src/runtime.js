@@ -2,11 +2,12 @@
   eslint no-underscore-dangle: off, no-param-reassign: off, import/first: off
  */
 
-import devHook from './dev-hook'; // needs to be before react imports
+import * as Hooks from './framework-hook'; // needs to be before react imports
 
 import ReactDOM from 'react-dom';
 import { reduceTreeBySelector } from 'enzyme/build/selectors';
 
+import flatten from './flatten';
 import hostNodeToNode from './tree-traversal';
 
 export function getDOMNode(node) {
@@ -20,14 +21,16 @@ export function getDOMNode(node) {
   return ReactDOM.findDOMNode(node.instance); // eslint-disable-line react/no-find-dom-node
 }
 
-
 export default {
+  waitForRelayRequests: Hooks.waitForRelayRequests,
+
   getRootNodes() {
-    return devHook.getFiberRoots().map(c => hostNodeToNode(c));
+    return Hooks.getAllRoots().map(c => c && hostNodeToNode(c.current));
   },
 
   qsa(selector) {
-    return reduceTreeBySelector(selector, this.getRootNodes());
+    return flatten(
+      this.getRootNodes().map(root => reduceTreeBySelector(selector, root)),
+    ).map(n => getDOMNode(n));
   },
 };
-
