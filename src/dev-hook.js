@@ -9,7 +9,9 @@ function getStub() {
     supportsFiber: true,
 
     inject(renderer) {
-      const id = Math.random().toString(16).slice(2);
+      const id = Math.random()
+        .toString(16)
+        .slice(2);
       renderers[id] = renderer;
     },
     getFiberRoots(rendererId) {
@@ -20,8 +22,8 @@ function getStub() {
       const mountedRoots = hook.getFiberRoots(rendererID);
       const current = root.current;
       const isKnownRoot = mountedRoots.has(root);
-      const isUnmounting = current.memoizedState == null ||
-        current.memoizedState.element == null;
+      const isUnmounting =
+        current.memoizedState == null || current.memoizedState.element == null;
 
       // Keep track of mounted roots so we can hydrate when DevTools connect.
       if (!isKnownRoot && !isUnmounting) mountedRoots.add(root);
