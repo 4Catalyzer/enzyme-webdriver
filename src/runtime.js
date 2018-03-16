@@ -10,7 +10,7 @@ import { reduceTreeBySelector } from 'enzyme/build/selectors';
 import flatten from './flatten';
 import hostNodeToNode from './tree-traversal';
 
-export function getDOMNode(node) {
+function getDOMNode(node) {
   while (node && !Array.isArray(node) && node.instance === null) {
     node = node.rendered;
   }
@@ -21,7 +21,7 @@ export function getDOMNode(node) {
   return ReactDOM.findDOMNode(node.instance); // eslint-disable-line react/no-find-dom-node
 }
 
-export default {
+window.EnzymeWebdriver = {
   waitForRelayRequests: Hooks.waitForRelayRequests,
 
   getRootNodes() {
@@ -29,8 +29,18 @@ export default {
   },
 
   qsa(selector) {
-    return flatten(
-      this.getRootNodes().map(root => reduceTreeBySelector(selector, root)),
-    ).map(n => getDOMNode(n));
+    try {
+      return flatten(
+        this.getRootNodes().map(root => reduceTreeBySelector(selector, root)),
+      ).map(n => getDOMNode(n));
+    } catch (err) {
+      const msg =
+        err.message || 'EnzymeWebdriver::Could not locate element(s)';
+      throw new Error(`${msg}\n\n  Selector:  ${selector}\n`);
+    }
+  },
+
+  _log(err) {
+    console.error(err);
   },
 };

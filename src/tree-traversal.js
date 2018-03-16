@@ -1,7 +1,7 @@
 /* eslint no-use-before-define: off */
 // https://github.com/airbnb/enzyme/tree/master/packages/enzyme-adapter-react-16/src
 
-import { findCurrentFiberUsingSlowPath } from 'react-reconciler/cjs/react-reconciler-reflection.development';
+import * as Reflection from 'react-reconciler/reflection';
 import flatten from './flatten';
 
 const HostRoot = 3;
@@ -11,6 +11,8 @@ const FunctionalComponent = 1;
 const HostPortal = 4;
 const HostComponent = 5;
 const HostText = 6;
+const ContextConsumer = 12;
+const ContextProvider = 13;
 
 function nodeAndSiblingsArray(nodeWithSibling) {
   const array = [];
@@ -29,11 +31,12 @@ function toTree(vnode) {
   // TODO(lmr): I'm not really sure I understand whether or not this is what
   // i should be doing, or if this is a hack for something i'm doing wrong
   // somewhere else. Should talk to sebastian about this perhaps
-  const node = findCurrentFiberUsingSlowPath(vnode);
+  const node = Reflection.findCurrentFiberUsingSlowPath(vnode);
   switch (node.tag) {
-    case HostRoot: // 3
-      return toTree(node.child);
-    case HostPortal: // 4
+    case HostRoot:
+    case HostPortal:
+    case ContextProvider:
+    case ContextConsumer:
       return toTree(node.child);
     case ClassComponent:
       return {
