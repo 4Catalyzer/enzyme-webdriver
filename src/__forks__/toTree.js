@@ -1,8 +1,7 @@
 /* eslint no-use-before-define: off */
-// https://github.com/airbnb/enzyme/tree/master/packages/enzyme-adapter-react-16/src
+// https://github.com/airbnb/enzyme/blob/master/packages/enzyme-adapter-react-16/src/ReactSixteenAdapter.js
 
 import * as Reflection from 'react-reconciler/reflection';
-import flatten from './flatten';
 
 const HostRoot = 3;
 const ClassComponent = 2;
@@ -11,8 +10,14 @@ const FunctionalComponent = 1;
 const HostPortal = 4;
 const HostComponent = 5;
 const HostText = 6;
+const Mode = 11;
 const ContextConsumer = 12;
 const ContextProvider = 13;
+const ForwardRef = 14;
+
+function ensureKeyOrUndefined(key) {
+  return key || (key === '' ? '' : undefined);
+}
 
 function nodeAndSiblingsArray(nodeWithSibling) {
   const array = [];
@@ -24,7 +29,26 @@ function nodeAndSiblingsArray(nodeWithSibling) {
   return array;
 }
 
-function toTree(vnode) {
+function flatten(arr) {
+  const result = [];
+  const stack = [{ i: 0, array: arr }];
+  while (stack.length) {
+    const n = stack.pop();
+    while (n.i < n.array.length) {
+      const el = n.array[n.i];
+      n.i += 1;
+      if (Array.isArray(el)) {
+        stack.push(n);
+        stack.push({ i: 0, array: el });
+        break;
+      }
+      result.push(el);
+    }
+  }
+  return result;
+}
+
+export default function toTree(vnode) {
   if (vnode == null) {
     return null;
   }
@@ -33,29 +57,26 @@ function toTree(vnode) {
   // somewhere else. Should talk to sebastian about this perhaps
   const node = Reflection.findCurrentFiberUsingSlowPath(vnode);
   switch (node.tag) {
-    case HostRoot:
-    case HostPortal:
-    case ContextProvider:
-    case ContextConsumer:
+    case HostRoot: // 3
+      return toTree(node.child);
+    case HostPortal: // 4
       return toTree(node.child);
     case ClassComponent:
       return {
         nodeType: 'class',
         type: node.type,
         props: { ...node.memoizedProps },
-        key: node.key || undefined,
+        key: ensureKeyOrUndefined(node.key),
         ref: node.ref,
         instance: node.stateNode,
         rendered: childrenToTree(node.child),
       };
-    case Fragment: // 10
-      return childrenToTree(node.child);
     case FunctionalComponent: // 1
       return {
         nodeType: 'function',
         type: node.type,
         props: { ...node.memoizedProps },
-        key: node.key || undefined,
+        key: ensureKeyOrUndefined(node.key),
         ref: node.ref,
         instance: null,
         rendered: childrenToTree(node.child),
@@ -72,7 +93,7 @@ function toTree(vnode) {
         nodeType: 'host',
         type: node.type,
         props: { ...node.memoizedProps },
-        key: node.key || undefined,
+        key: ensureKeyOrUndefined(node.key),
         ref: node.ref,
         instance: node.stateNode,
         rendered: renderedNodes,
@@ -80,6 +101,12 @@ function toTree(vnode) {
     }
     case HostText: // 6
       return node.memoizedProps;
+    case Fragment:
+    case ContextProvider:
+    case ContextConsumer:
+    case Mode:
+    case ForwardRef:
+      return childrenToTree(node.child);
     default:
       throw new Error(
         `Enzyme Internal Error: unknown node with tag ${node.tag}`,
@@ -98,9 +125,4 @@ function childrenToTree(node) {
     return toTree(children[0]);
   }
   return flatten(children.map(toTree));
-}
-
-export default function hostNodeToNode(vnode) {
-  // eslint-disable-next-line no-underscore-dangle
-  return vnode ? toTree(vnode) : null;
 }

@@ -5,8 +5,8 @@ describe('runtime', () => {
   let runtime;
 
   beforeEach(() => {
-    runtime = require('../src/runtime').default;
-
+    require('../src/runtime');
+    runtime = window.EnzymeWebdriver;
     ReactDOM = require('react-dom');
   });
 

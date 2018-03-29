@@ -6,14 +6,20 @@ import * as Hooks from './framework-hook'; // needs to be before react imports
 
 import ReactDOM from 'react-dom';
 import { reduceTreeBySelector } from 'enzyme/build/selectors';
+import toTree from './__forks__/toTree';
 
-import flatten from './flatten';
-import hostNodeToNode from './tree-traversal';
+function hostNodeToNode(vnode) {
+  return vnode ? toTree(vnode) : null;
+}
+
+const flatten = list =>
+  list.reduce((a, b) => a.concat(Array.isArray(b) ? flatten(b) : b), []);
 
 function getDOMNode(node) {
   while (node && !Array.isArray(node) && node.instance === null) {
     node = node.rendered;
   }
+
   if (Array.isArray(node)) {
     throw new Error('Trying to get host node of an array');
   }
@@ -41,6 +47,6 @@ window.EnzymeWebdriver = {
   },
 
   _log(err) {
-    console.error(err);
+    console.error(err); // eslint-disable-line
   },
 };
